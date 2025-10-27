@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing URL Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .analyze-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .analyze-btn:hover {
+            background: #2980b9;
+        }
+
+        .analyze-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .result-section {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            animation: fadeIn 0.5s;
+        }
+
+        .safe {
+            background: #d5f4e6;
+            border: 2px solid #2ecc71;
+            color: #27ae60;
+        }
+
+        .phishing {
+            background: #fdeaea;
+            border: 2px solid #e74c3c;
+            color: #c0392b;
+        }
+
+        .error {
+            background: #fef9e7;
+            border: 2px solid #f39c12;
+            color: #d35400;
+        }
+
+        .result-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .result-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .result-details {
+            margin-top: 15px;
+            text-align: left;
+            background: rgba(255,255,255,0.7);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .examples {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .examples h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .example-urls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .example-url {
+            padding: 10px;
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .example-url:hover {
+            background: #e8f4fd;
+        }
+
+        .confidence-bar {
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Phishing URL Detector</h1>
+            <p>Check if a website is safe or potentially dangerous</p>
+        </div>
+
+        <div class="content">
+            <div class="input-section">
+                <input type="url" class="url-input" id="urlInput" 
+                       placeholder="Enter URL to analyze (e.g., https://example.com)" 
+                       autocomplete="off">
+                <button class="analyze-btn" id="analyzeBtn" onclick="analyzeURL()">
+                    🔍 Analyze URL
+                </button>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px;">Analyzing URL for phishing indicators...</p>
+                </div>
+            </div>
+
+            <div class="result-section" id="resultSection">
+                <!-- Results will be displayed here -->
+            </div>
+
+            <div class="examples">
+                <h3>💡 Try these examples:</h3>
+                <div class="example-urls">
+                    <div class="example-url" onclick="setExample('https://google.com')">
+                        https://google.com (Safe)
+                    </div>
+                    <div class="example-url" onclick="setExample('https://github.com')">
+                        https://github.com (Safe)
+                    </div>
+                    <div class="example-url" onclick="setExample('http://95.5.90.172:34844/bin.sh')">
+                        http://95.5.90.172:34844/bin.sh (Phishing)
+                    </div>
+                    <div class="example-url" onclick="setExample('https://bit.ly/suspicious-login')">
+                        https://bit.ly/suspicious-login (Suspicious)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Powered by MCP Phishing Detection Server | AI-Powered Security Analysis
+        </div>
+    </div>
+
+    <script>
+        // Your ngrok URL - UPDATE THIS WITH YOUR ACTUAL NGROK URL
+     //   const MCP_SERVER_URL = 'https://zoological-unpathologically-regenia.ngrok-free.dev';
+
+        function setExample(url) {
+            document.getElementById('urlInput').value = url;
+        }
+
+        async function analyzeURL() {
+            const urlInput = document.getElementById('urlInput');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const loading = document.getElementById('loading');
+            const resultSection = document.getElementById('resultSection');
+            
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                alert('Please enter a URL to analyze');
+                return;
+            }
+
+            // Add http:// if missing
+            let fullUrl = url;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                fullUrl = 'http://' + url;
+            }
+
+            // Show loading, disable button
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Analyzing...';
+            loading.style.display = 'block';
+            resultSection.style.display = 'none';
+
+            try {
+                const response = await fetch(`/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: fullUrl })
+                });
+
+                const data = await response.json();
+
+                // Display results
+                displayResults(data, fullUrl);
+
+            } catch (error) {
+                showError('Failed to analyze URL: ' + error.message);
+            } finally {
+                // Reset UI
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🔍 Analyze URL';
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayResults(data, originalUrl) {
+            const resultSection = document.getElementById('resultSection');
+            const confidence = (data.confidence * 100).toFixed(1);
+            
+            let resultHTML = '';
+            let resultClass = '';
+            let icon = '';
+            let title = '';
+
+            if (data.is_phishing) {
+                resultClass = 'phishing';
+                icon = '🟥';
+                title = 'PHISHING DETECTED';
+            } else {
+                resultClass = 'safe';
+                icon = '🟩';
+                title = 'SAFE WEBSITE';
+            }
+
+            // Confidence bar color
+            let confidenceColor = data.is_phishing ? '#e74c3c' : '#2ecc71';
+            if (data.confidence < 0.7) {
+                confidenceColor = '#f39c12'; // Orange for uncertain
+            }
+
+            resultHTML = `
+                <div class="result-icon">${icon}</div>
+                <div class="result-title">${title}</div>
+                <div style="font-size: 1.2em; margin-bottom: 15px;">
+                    Confidence: <strong>${confidence}%</strong>
+                </div>
+                
+                <div class="confidence-bar">
+                    <div class="confidence-fill" style="width: ${confidence}%; background: ${confidenceColor};"></div>
+                </div>
+
+                <div class="result-details">
+                    <p><strong>URL Analyzed:</strong> ${originalUrl}</p>
+                    <p><strong>Analysis:</strong> ${data.explanation || 'No detailed explanation available'}</p>
+                    <p><strong>Method:</strong> ${data.method || 'AI Model'}</p>
+                    <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: ${data.is_phishing ? '#fdedec' : '#edf7ed'}; border-radius: 8px;">
+                    <strong>${data.is_phishing ? '⚠️ Security Warning:' : '✅ Security Status:'}</strong>
+                    ${data.is_phishing ? 
+                        'This URL shows characteristics of phishing websites. Avoid entering personal information.' :
+                        'This URL appears to be legitimate. Always practice safe browsing habits.'
+                    }
+                </div>
+            `;
+
+            resultSection.className = `result-section ${resultClass}`;
+            resultSection.innerHTML = resultHTML;
+            resultSection.style.display = 'block';
+
+            // Scroll to results
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showError(message) {
+            const resultSection = document.getElementById('resultSection');
+            resultSection.className = 'result-section error';
+            resultSection.innerHTML = `
+                <div class="result-icon">❌</div>
+                <div class="result-title">ANALYSIS FAILED</div>
+                <p>${message}</p>
+                <div style="margin-top: 15px;">
+                    <p>Please check:</p>
+                    <ul style="text-align: left; margin-top: 10px;">
+                        <li>Your internet connection</li>
+                        <li>The MCP server is running</li>
+                        <li>The URL format is correct</li>
+                    </ul>
+                </div>
+            `;
+            resultSection.style.display = 'block';
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Allow Enter key to trigger analysis
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeURL();
+            }
+        });
+    </script>
+</body>
+</html>
