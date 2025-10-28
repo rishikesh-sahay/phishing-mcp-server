@@ -1,3 +1,8 @@
+
+
+
+<img width="820" height="838" alt="Screenshot" src="https://github.com/user-attachments/assets/9d1bee09-5f2e-481e-998a-bb5a89d71345" />
+
 # phishing-mcp-server
 MCP server for phishing URL detection
 
