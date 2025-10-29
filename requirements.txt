@@ -10,3 +10,4 @@ python-dotenv==1.0.0
 gunicorn==21.2.0
 tldextract==3.4.4
 python-whois==0.8.0
+mcp
